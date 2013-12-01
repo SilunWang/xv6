@@ -9,6 +9,14 @@ inb(ushort port)
   return data;
 }
 
+static inline ushort
+inw(ushort port)
+{
+    ushort data;
+    asm volatile("inw %w1,%0" : "=a" (data) : "d" (port));
+    return data;
+}
+
 static inline void
 insl(int port, void *addr, int cnt)
 {

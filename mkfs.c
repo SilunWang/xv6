@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <assert.h>
 
+
 #define stat xv6_stat  // avoid clash with host struct stat
 #include "types.h"
 #include "fs.h"
@@ -13,10 +14,10 @@
 
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
 
-int nblocks = 985;
+int nblocks = 1024 * 1024 - LOGSIZE - 26 - 256 - 3;
 int nlog = LOGSIZE;
 int ninodes = 200;
-int size = 1024;
+int size = 1024 * 1024;
 
 int fsfd;
 struct superblock sb;
@@ -60,6 +61,7 @@ xint(uint x)
 int
 main(int argc, char *argv[])
 {
+  //test_file = fopen("wangxu", "w");
   int i, cc, fd;
   uint rootino, inum, off;
   struct dirent de;
@@ -234,16 +236,23 @@ void
 balloc(int used)
 {
   uchar buf[512];
-  int i;
+  int i, j = 0;
 
   printf("balloc: first %d blocks have been allocated\n", used);
-  assert(used < 512*8);
-  bzero(buf, 512);
-  for(i = 0; i < used; i++){
-    buf[i/8] = buf[i/8] | (0x1 << (i%8));
+  //assert(used < 512*8);
+  while(used > 0)
+  {
+    bzero(buf, 512);
+    for(i = 0; i < used && i < 512; i++){
+      buf[i/8] = buf[i/8] | (0x1 << (i%8));
+    }
+    used -= 512;
+
+    printf("%dballoc: write bitmap block at sector %zu\n", used,  ninodes/IPB + 3+j);
+    wsect(ninodes / IPB + 3 + j, buf);
+    j ++;
   }
-  printf("balloc: write bitmap block at sector %zu\n", ninodes/IPB + 3);
-  wsect(ninodes / IPB + 3, buf);
+  printf("balloc finished.");
 }
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -257,13 +266,15 @@ iappend(uint inum, void *xp, int n)
   char buf[512];
   uint indirect[NINDIRECT];
   uint x;
-
+  uint* addr_ptr, oldaddr = 0;
   rinode(inum, &din);
+  int temp_fbn;
+  
 
   off = xint(din.size);
   while(n > 0){
     fbn = off / 512;
-    assert(fbn < MAXFILE);
+    //assert(fbn < MAXFILE);
     if(fbn < NDIRECT){
       if(xint(din.addrs[fbn]) == 0){
         din.addrs[fbn] = xint(freeblock++);
@@ -271,20 +282,70 @@ iappend(uint inum, void *xp, int n)
       }
       x = xint(din.addrs[fbn]);
     } else {
-      if(xint(din.addrs[NDIRECT]) == 0){
+      temp_fbn = fbn;
+      fbn -= NDIRECT; 
+      addr_ptr = &(din.addrs[NDIRECT]);
+      //int test = 0;
+      while(fbn >= NINDIRECT - 1)
+      {
+	
+        if(xint(*addr_ptr) == 0)
+        {
+          
+          *addr_ptr = xint(freeblock++);
+	 
+          usedblocks ++;
+          if(oldaddr != 0)
+          {
+	          //printf("%d\n", indirect[NINDIRECT - 1]);
+            wsect(oldaddr, (char*)indirect);
+            rsect(oldaddr, (char*)indirect);
+            //printf("%d\n", indirect[NINDIRECT - 1]);
+          }
+
+
+        }
+        fbn -= (NINDIRECT - 1);
+        oldaddr = xint(*addr_ptr);
+        rsect(oldaddr, (char*)indirect);
+        
+	//printf("%d---%d\n", oldaddr, xint(*addr_ptr));
+        addr_ptr = &(indirect[NINDIRECT - 1]);
+        //fprintf(test_file, "%d--%d--%d--%d\n", test, xint(*addr_ptr), oldaddr, fbn);
+       // test ++;
+      }
+	//fprintf(test_file, "addr%d\n", xint(*addr_ptr));
+      if(xint(*addr_ptr) == 0)
+      {
+        *addr_ptr = xint(freeblock++);
+        usedblocks ++;
+        if(oldaddr != 0)
+          {
+            //printf("%d\n", indirect[NINDIRECT - 1]);
+            wsect(oldaddr, (char*)indirect);
+            rsect(oldaddr, (char*)indirect);
+            //printf("%d\n", indirect[NINDIRECT - 1]);
+          }
+      }
+     
+      rsect(xint(*addr_ptr), (char*)indirect);
+      /**if(xint(din.addrs[NDIRECT]) == 0){
         // printf("allocate indirect block\n");
         din.addrs[NDIRECT] = xint(freeblock++);
         usedblocks++;
-      }
+      }*/
       // printf("read indirect block\n");
-      rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
-      if(indirect[fbn - NDIRECT] == 0){
-        indirect[fbn - NDIRECT] = xint(freeblock++);
+      //rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
+      if(indirect[fbn] == 0){
+        indirect[fbn] = xint(freeblock++);
         usedblocks++;
-        wsect(xint(din.addrs[NDIRECT]), (char*)indirect);
+        wsect(xint(*addr_ptr), (char*)indirect);
       }
-      x = xint(indirect[fbn-NDIRECT]);
+      x = xint(indirect[fbn]);
+
+      fbn = temp_fbn;
     }
+    //printf("%d\n", x);
     n1 = min(n, (fbn + 1) * 512 - off);
     rsect(x, buf);
     bcopy(p, buf + off - (fbn * 512), n1);

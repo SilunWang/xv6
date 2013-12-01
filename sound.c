@@ -9,20 +9,20 @@
 
 //Native Audio Mixer Base Address
 ushort AUDIO_IO_SPACE_NAMBA;
-#define GENERAL_PURPO 0x20 //General Purpose
 
 //Native Audio Bus Mastering Base Address
 ushort AUDIO_IO_SPACE_NABMBA;
-#define PO_BDBAR 0x10//Buffer基地址 PCM Out Buffer Descriptor list Base Address Register 
-#define PO_CIV 0x14//没用上 PCM Out Current Index Value
-#define PO_LVI 0x15//PCM Out Last Valid Index 
-#define PO_SR 0x16//PCM Out Status Register
-#define PO_CR 0x1B //PCM Out Control Register
-#define MC_BDBAR 0x20//Mic. In Buffer Descriptor list Base Address Register 
-#define PM_CIV 0x24//Mic. In Current Index Value 
-#define MC_LVI 0x25//Mic. In Last Valid Index
-#define MC_SR 0x26//Mic. In Status Register
-#define MC_CR 0x2B//Mic. In Control Register
+
+#define PO_BDBAR AUDIO_IO_SPACE_NABMBA + 0x10//Buffer基地址 PCM Out Buffer Descriptor list Base Address Register 
+#define PO_CIV AUDIO_IO_SPACE_NABMBA + 0x14//没用上 PCM Out Current Index Value
+#define PO_LVI AUDIO_IO_SPACE_NABMBA + 0x15//PCM Out Last Valid Index 
+#define PO_SR AUDIO_IO_SPACE_NABMBA + 0x16//PCM Out Status Register
+#define PO_CR AUDIO_IO_SPACE_NABMBA + 0x1B //PCM Out Control Register
+#define MC_BDBAR AUDIO_IO_SPACE_NABMBA + 0x20//Mic. In Buffer Descriptor list Base Address Register
+#define PM_CIV AUDIO_IO_SPACE_NABMBA + 0x24//Mic. In Current Index Value
+#define MC_LVI AUDIO_IO_SPACE_NABMBA + 0x25//Mic. In Last Valid Index
+#define MC_SR AUDIO_IO_SPACE_NABMBA + 0x26//Mic. In Status Register
+#define MC_CR AUDIO_IO_SPACE_NABMBA + 0x2B//Mic. In Control Register
 
 static struct spinlock soundLock;
 static struct soundNode *soundQueue;
@@ -97,7 +97,7 @@ void addSound(struct soundNode *node)
   release(&soundLock);
 }
 
-void playSound()
+void playSound(void)
 {
 	int i;
 
@@ -115,20 +115,22 @@ void playSound()
 	if ((soundQueue->flag & PCM_OUT) == PCM_OUT)
 	{
     	//init base register
-    	outsl(AUDIO_IO_SPACE_NABMBA + PO_BDBA, &base, 1);
+    	outsl(PO_BDBA, &base, 1);
     	//init last valid index
-    	outb(AUDIO_IO_SPACE_NABMBA + MC_LVI, 0x1F);
+    	outb(MC_LVI, 0x1F);
     	//init control register
-    	outb(AUDIO_IO_SPACE_NABMBA + MC_CR, 0x05);
+    	outb(MC_CR, 0x05);
 	}
 
 	//开始录音
 	else if ((soundQueue->flag & PCM_IN) == PCM_IN)
 	{
     	//init register
-    	outsl(AUDIO_IO_SPACE_NABMBA + PO_BDBA, &base, 1);
-    	outb(AUDIO_IO_SPACE_NABMBA + MC_LVI, 0x1F);
-    	outb(AUDIO_IO_SPACE_NABMBA + MC_CR, 0x05);
+    	outsl(PO_BDBA, &base, 1);
+    	//init last valid index
+    	outb(MC_LVI, 0x1F);
+    	//init control register
+    	outb(MC_CR, 0x05);
 	}
 
 }
@@ -152,13 +154,13 @@ void soundInterrupt(void)
   {
     if ((flag & PCM_OUT) == PCM_OUT)
     {
-      ushort sr = inw(AUDIO_IO_SPACE_NABMBA + PO_SR);
-      outw(AUDIO_IO_SPACE_NABMBA + PO_SR, sr);
+      ushort sr = inw(PO_SR);
+      outw(PO_SR, sr);
     }
     else if ((flag & AB_PCM_IN) == PCM_IN)
     {
-      ushort sr = inw(AUDIO_IO_SPACE_NABMBA + MC_SR);
-      outw(AUDIO_IO_SPACE_NABMBA + MC_SR, sr);
+      ushort sr = inw(MC_SR);
+      outw(MC_SR, sr);
     }
     cprintf("Play Done\n");
     release(&soundLock);
@@ -175,18 +177,30 @@ void soundInterrupt(void)
   //play music
   if ((flag & PCM_OUT) == PCM_OUT)
   {
-    ushort sr = inw(AUDIO_IO_SPACE_NABMBA + PO_SR);
-    outw(AUDIO_IO_SPACE_NABMBA + PO_SR, sr);
-    outb(AUDIO_IO_SPACE_NABMBA + PO_CR, 0x05);
+    ushort sr = inw(PO_SR);
+    outw(PO_SR, sr);
+    outb(PO_CR, 0x05);
   }
 
   //record
   else if ((flag & PCM_IN) == PCM_IN)
   {
-    ushort sr = inw(AUDIO_IO_SPACE_NABMBA + MC_SR);
-    outw(AUDIO_IO_SPACE_NABMBA + MC_SR, sr);
-    outb(AUDIO_IO_SPACE_NABMBA + MC_CR, 0x05);
+    ushort sr = inw(MC_SR);
+    outw(MC_SR, sr);
+    outb(MC_CR, 0x05);
   }
   
   release(&soundLock);
 }
+
+void pauseSound(void)
+{
+  // get Control Register
+  uchar temp = inb(PO_CR);
+
+  if (temp != 0x00)
+    outb(PO_CR, 0x00);
+  else
+    outb(PO_CR, 0x05);
+}
+

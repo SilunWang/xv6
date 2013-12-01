@@ -173,7 +173,7 @@ UPROGS=\
 	_zombie\
 
 fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS)
+	./mkfs fs.img README $(UPROGS) bird.wav
 
 -include *.d
 

@@ -33,7 +33,7 @@ OBJS = \
 #TOOLPREFIX = i386-jos-elf-
 
 # Using native tools (e.g., on X86 Linux)
-TOOLPREFIX = i386-elf-
+#TOOLPREFIX = 
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
@@ -52,7 +52,7 @@ TOOLPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/d
 endif
 
 # If the makefile can't find QEMU, specify its path here
-QEMU = /usr/local/bin/qemu-system-i386
+#QEMU = 
 
 # Try to infer the correct QEMU
 ifndef QEMU
@@ -147,7 +147,7 @@ _forktest: forktest.o $(ULIB)
 	$(OBJDUMP) -S _forktest > forktest.asm
 
 mkfs: mkfs.c fs.h
-	gcc -g -Werror -Wall -o mkfs mkfs.c
+	gcc -Werror -Wall -o mkfs mkfs.c
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -171,10 +171,9 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	
 
 fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS) bird.wav
+	./mkfs fs.img README $(UPROGS)
 
 -include *.d
 
@@ -210,10 +209,10 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -hdb fs.img xv6.img -smp $(CPUS) -m 512 $(QEMUEXTRA) -k en-us
+QEMUOPTS = -hda xv6.img -hdb fs.img -smp $(CPUS) -m 512 $(QEMUEXTRA) -k en-us
 
 qemu: fs.img xv6.img
-	$(QEMU) -soundhw all -serial mon:stdio $(QEMUOPTS)
+	$(QEMU) -soundhw ac97 -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
 	$(QEMU) xv6memfs.img -smp $(CPUS)

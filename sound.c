@@ -1,4 +1,6 @@
 #include "sound.h"
+#include "x86.h"
+#include "defs.h"
 #include "param.h"
 #include "mmu.h"
 #include "traps.h"

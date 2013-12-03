@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "buf.h"
 
 int
 sys_fork(void)
@@ -87,4 +88,48 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+
+int
+sys_ideread(void)
+{
+    char* dst;
+    int dev, sector, offset, length;
+    int i;
+    
+    if (argint(1, &dev) < 0 || argint(2, &sector) < 0 || argint(3, &offset) < 0 || argint(4, &length) < 0 || argptr(0, &dst, length) < 0)
+      return -1;
+     
+    struct buf* temp;
+    uchar* tempfordst;
+    uint WhereToBegin = 0;
+    if (offset >= 512)
+    {
+       WhereToBegin = offset / 512;
+       offset = offset % 512;
+    }
+    uint nsector = (length + offset) / 512;
+    uint lastbyte = (length + offset) % 512;
+    temp = bread(dev,sector + WhereToBegin);
+    memmove(dst, &(temp->data) + offset, (512 - offset < length ? 512 - offset : length));
+    tempfordst = (uchar *)((uint)dst + 512 - offset);
+    brelse(temp);
+    for (i = 1; i < nsector; i++)
+    {
+         temp = bread(dev, sector + i + WhereToBegin);
+         memmove(tempfordst, &(temp->data), 512);
+         tempfordst += 512;
+         brelse(temp);
+    }
+    if (lastbyte != length + offset)
+    {
+         if (lastbyte != 0)
+         {
+             temp = bread(dev, sector + i + WhereToBegin);
+             memmove(tempfordst, &(temp->data), lastbyte);
+             brelse(temp);
+         }
+    }
+   return 0;
 }

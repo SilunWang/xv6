@@ -1,8 +1,8 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "audio.h"
 #include "fcntl.h"
+#include "sound.h"
 
 int
 main(int argc, char *argv[])

@@ -22,6 +22,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int writeaudio(void*, int);
+int setaudiosmprate(int);
+int setaudiovolume(int);
 
 // ulib.c
 int stat(char*, struct stat*);

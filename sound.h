@@ -1,6 +1,4 @@
 #include "types.h"
-#include "defs.h"
-#include "x86.h"
 
 #define SOUND_COM 0x04
 #define SOUND_NAMBA 0x10
@@ -28,6 +26,26 @@ struct soundNode
 	volatile int flag;
 	struct soundNode *next;
 	uchar data[DMA_BUF_NUM * DMA_BUF_SIZE];
+};
+
+struct fmt {
+    uint id;
+    uint len;
+    ushort pad;
+    ushort channel;
+    uint sample_rate;
+    uint bytes_per_sec;
+    ushort bytes_per_sample;
+    ushort bits_per_sample;
+};
+
+struct wav{
+    uint riff_id;
+    uint rlen;
+    uint wave_id;
+    struct fmt info;
+    uint data_id;
+    uint dlen;
 };
 
 uint read_pci_config(uchar bus, uchar slot, uchar func, uchar offset);

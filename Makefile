@@ -175,7 +175,7 @@ UPROGS=\
 	_play\
 
 fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS) bird.wav
+	./mkfs fs.img README $(UPROGS) adios.wav
 
 -include *.d
 

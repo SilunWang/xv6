@@ -14,7 +14,7 @@
 #define PCI_CONFIG
 
 #define DMA_BUF_NUM  32
-#define DMA_SMP_NUM  0x8000
+#define DMA_SMP_NUM  0x0800
 #define DMA_BUF_SIZE (DMA_SMP_NUM * 2)
 
 #define PROCESSED  0x1

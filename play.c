@@ -18,7 +18,7 @@ main(int argc, char *argv[])
     printf(0, "open wav file fail\n");
     exit();
   }
-
+ 
   read(fd, &info, sizeof(struct wav));
 
   if ((info.riff_id != 0x46464952)||(info.wave_id != 0x45564157)) {
@@ -27,31 +27,31 @@ main(int argc, char *argv[])
     exit();
   }
 
-  if ((info.info.id != 0x20746d66)||
+/*  if ((info.info.id != 0x20746d66)||
       (info.info.channel != 0x0002)||
       (info.info.bytes_per_sample != 0x0004)||
       (info.info.bits_per_sample != 0x0010)) {
+      printf(0, "%x %x %x %x\n", info.info.id, info.info.channel, info.info.bytes_per_sample, info.info.bytes_per_sample);
     printf(0, "data encoded in an unaccepted way\n");
     close(fd);
     exit();
   }
-
+*/
   setaudiosmprate(info.info.sample_rate);
-
   uint rd = 0;
-  char buf[4096];
-  
+  char buf[2049];
   while (rd < info.dlen)
   {
-    read(fd, buf, (info.dlen - rd < 4096 ? info.dlen -rd : 4096));
-    writeaudio(buf, (info.dlen - rd < 4096 ? info.dlen -rd : 4096));
-    rd += (info.dlen - rd < 4096 ? info.dlen -rd : 4096);
+    read(fd, buf, (info.dlen - rd < 2048 ? info.dlen -rd : 2048));
+      printf(0, "%d %d\n", rd, info.dlen);
+    writeaudio(buf, (info.dlen - rd < 2048 ? info.dlen -rd : 2048));
+    rd += (info.dlen - rd < 2048 ? info.dlen -rd : 2048);
   }
 
-  memset(buf, 0, 4096);
-  for (i = 0; i < DMA_BUF_NUM*DMA_BUF_SIZE/4096+1; i++)
+  memset(buf, 0, 2048);
+  for (i = 0; i < DMA_BUF_NUM*DMA_BUF_SIZE/2048+1; i++)
   {
-    writeaudio(buf, 4096);
+    writeaudio(buf, 2048);
   }
 
   close(fd);

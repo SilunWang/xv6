@@ -7,7 +7,7 @@
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
-
+#include "sound.h"
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
@@ -45,7 +45,6 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
-
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpu->id == 0){
@@ -54,6 +53,10 @@ trap(struct trapframe *tf)
       wakeup(&ticks);
       release(&tickslock);
     }
+    lapiceoi();
+    break;
+  case T_IRQ0 + IRQ_SOUND:
+    soundInterrupt();
     lapiceoi();
     break;
   case T_IRQ0 + IRQ_IDE:
@@ -80,6 +83,7 @@ trap(struct trapframe *tf)
    
   //PAGEBREAK: 13
   default:
+    cprintf("%d\n", tf->trapno);
     if(proc == 0 || (tf->cs&3) == 0){
       // In kernel, it must be our mistake.
       cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",

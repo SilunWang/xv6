@@ -62,57 +62,59 @@ sys_audiopause(void)
 
 int sys_writeaudio(void)
 {
-      int size;
-        char *buf;
-        //soundNode的数据大小
-        int bufsize = DMA_BUF_NUM*DMA_BUF_SIZE;
-        //获取待播放的数据和数据大小
-        if (argint(1, &size) < 0 || argptr(0, &buf, size) < 0)
-            return -1;
-        if (datacount == 0)
-            memset(&audiobuf[bufcount], 0, sizeof(struct soundNode));
-        //若soundNode的剩余大小大于数据大小，将数据写入soundNode中
-        if (bufsize - datacount > size)
+	int size;
+    char *buf;
+    //soundNode的数据大小
+    int bufsize = DMA_BUF_NUM*DMA_BUF_SIZE;
+    //获取待播放的数据和数据大小
+    if (argint(1, &size) < 0 || argptr(0, &buf, size) < 0)
+        return -1;
+    if (datacount == 0)
+        memset(&audiobuf[bufcount], 0, sizeof(struct soundNode));
+    //若soundNode的剩余大小大于数据大小，将数据写入soundNode中
+    if (bufsize - datacount > size)
+    {
+        memmove(&audiobuf[bufcount].data[datacount], buf, size);
+        audiobuf[bufcount].flag = PCM_OUT | PROCESSED;
+        datacount += size;
+    }
+    else
+    {
+        int temp = bufsize - datacount,i;
+        //soundNode存满后调用audioplay进行播放
+        memmove(&audiobuf[bufcount].data[datacount], buf, temp);
+        audiobuf[bufcount].flag = PCM_OUT;
+        cprintf("sys_writeaudio\n");
+        addSound(&audiobuf[bufcount]);
+        int flag = 1;
+        //寻找一个已经被处理的soundNode，将剩余数据戏写入
+        while(flag == 1)
         {
-            memmove(&audiobuf[bufcount].data[datacount], buf, size);
-            audiobuf[bufcount].flag = PCM_OUT | PROCESSED;
-            datacount += size;
-        }
-        else
-        {
-            int temp = bufsize - datacount, i;
-            //soundNode存满后调用audioplay进行播放
-            memmove(&audiobuf[bufcount].data[datacount], buf, temp);
-            audiobuf[bufcount].flag = PCM_OUT;
-            addSound(&audiobuf[bufcount]);
-            int flag = 0;
-            //寻找一个已经被处理的soundNode，将剩余数据戏写入
-            while(flag)
+            for (i = 0; i < 3; ++i)
             {
-                for (i = 0; i < 3; ++i)
+                if ((audiobuf[i].flag & PROCESSED) == PROCESSED)
                 {
-                    if ((audiobuf[i].flag & PROCESSED) == PROCESSED)
+                    memset(&audiobuf[i], 0, sizeof(struct soundNode));
+                    if (bufsize > size - temp)
                     {
-                        memset(&audiobuf[i], 0, sizeof(struct soundNode));
-                        if (bufsize > size - temp)
-                        {
-                            memmove(&audiobuf[i].data[0], (buf +temp), (size-temp));
-                            audiobuf[i].flag = PCM_OUT | PROCESSED;
-                            datacount = size - temp;
-                            bufcount = i;
-                            flag = 1;
-                            break;
-                        }
-                        else
-                        {
-                            memmove(&audiobuf[i].data[0], (buf +temp), bufsize);
-                            temp = temp + bufsize;
-                            audiobuf[i].flag = PCM_OUT;
-                            addSound(&audiobuf[i]);
-                        }
+                        memmove(&audiobuf[i].data[0], (buf +temp), (size-temp));
+                        audiobuf[i].flag = PCM_OUT | PROCESSED;
+                        datacount = size - temp;
+                        bufcount = i;
+                        flag = -1;
+                        break;
+                    }
+                    else
+                    {
+                        memmove(&audiobuf[i].data[0], (buf +temp), bufsize);
+                        temp = temp + bufsize;
+                        audiobuf[i].flag = PCM_OUT;
+                        cprintf("sys_writeaudio\n");
+                        addSound(&audiobuf[i]);
                     }
                 }
             }
         }
-      return 0;
+    }
+	return 0;
 }

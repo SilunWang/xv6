@@ -11,25 +11,23 @@
 #define PCI_CONFIG_DATA 0xcfc
 
 //Native Audio Mixer Base Address
-ushort AUDIO_IO_SPACE_NAMBA;
-#define NAMBA_PCMV AUDIO_IO_SPACE_NAMBA + 0x20 //volume? General Purpose
-#define FRONT_DAC_RATE AUDIO_IO_SPACE_NAMBA + 0x2C
-#define SURROUND_DAC_RATE AUDIO_IO_SPACE_NAMBA + 0x2E
-#define LFE_DAC_RATE AUDIO_IO_SPACE_NAMBA + 0x30
+ushort SOUND_NAMBA_DATA;
+#define NAMBA_PCMV SOUND_NAMBA_DATA + 0x20 //volume? General Purpose
+#define FRONT_DAC_RATE SOUND_NAMBA_DATA + 0x2C
+#define SURROUND_DAC_RATE SOUND_NAMBA_DATA + 0x2E
+#define LFE_DAC_RATE SOUND_NAMBA_DATA + 0x30
 
 //Native Audio Bus Mastering Base Address
-ushort AUDIO_IO_SPACE_NABMBA;
-#define PO_BDBAR AUDIO_IO_SPACE_NABMBA + 0x10//PCM Out Buffer Descriptor list Base Address Register 
-#define PO_LVI AUDIO_IO_SPACE_NABMBA + 0x15//PCM Out Last Valid Index 
-#define PO_SR AUDIO_IO_SPACE_NABMBA + 0x16//PCM Out Status Register
-#define PO_CR AUDIO_IO_SPACE_NABMBA + 0x1B //PCM Out Control Register
-#define MC_BDBAR AUDIO_IO_SPACE_NABMBA + 0x20//Mic. In Buffer Descriptor list Base Address Register
-#define MC_LVI AUDIO_IO_SPACE_NABMBA + 0x25//Mic. In Last Valid Index
-#define MC_SR AUDIO_IO_SPACE_NABMBA + 0x26//Mic. In Status Register
-#define MC_CR AUDIO_IO_SPACE_NABMBA + 0x2B//Mic. In Control Register
-
-ushort SOUND_NAMBA_DATA;
 ushort SOUND_NABMBA_DATA;
+#define PO_BDBAR SOUND_NABMBA_DATA + 0x10//PCM Out Buffer Descriptor list Base Address Register 
+#define PO_LVI SOUND_NABMBA_DATA + 0x15//PCM Out Last Valid Index 
+#define PO_SR SOUND_NABMBA_DATA + 0x16//PCM Out Status Register
+#define PO_CR SOUND_NABMBA_DATA + 0x1B //PCM Out Control Register
+#define MC_BDBAR SOUND_NABMBA_DATA + 0x20//Mic. In Buffer Descriptor list Base Address Register
+#define MC_LVI SOUND_NABMBA_DATA + 0x25//Mic. In Last Valid Index
+#define MC_SR SOUND_NABMBA_DATA + 0x26//Mic. In Status Register
+#define MC_CR SOUND_NABMBA_DATA + 0x2B//Mic. In Control Register
+
 static struct spinlock soundLock;
 static struct soundNode *soundQueue;
 
@@ -200,6 +198,7 @@ void playSound(void)
     //开始播放: PCM_OUT
     if ((soundQueue->flag & PCM_OUT) == PCM_OUT)
     {
+        cprintf("PCM_OUT\n");
         //init base register
         //将内存地址base开始的1个双字写到PO_BDBAR
         outsl(PO_BDBAR, &base, 1);
@@ -214,6 +213,7 @@ void playSound(void)
     //开始录音: Mic_IN
     else if ((soundQueue->flag & PCM_IN) == PCM_IN)
     {
+        cprintf("PCM_IN\n");
         //init register
         //将内存地址base开始的1个双字写到PO_BDBAR
         outsl(MC_BDBAR, &base, 1);

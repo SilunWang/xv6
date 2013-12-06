@@ -14,7 +14,7 @@
 #define PCI_CONFIG
 
 #define DMA_BUF_NUM  32
-#define DMA_SMP_NUM  0x0800
+#define DMA_SMP_NUM  0x3000
 #define DMA_BUF_SIZE (DMA_SMP_NUM * 2)
 
 #define PROCESSED  0x1
@@ -51,7 +51,7 @@ struct wav{
 uint read_pci_config(uchar bus, uchar slot, uchar func, uchar offset);
 void write_pci_config(uchar bus, uchar slot, uchar func, uchar offset, uint val);
 void soundcardinit(uchar bus, uchar slot, uchar func);
-
+void setVolume(ushort volume);
 void addSound(struct soundNode *node);
 void playSound(void);
 void soundInterrupt(void);

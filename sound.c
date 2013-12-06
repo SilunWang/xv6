@@ -12,6 +12,7 @@
 
 //Native Audio Mixer Base Address
 ushort AUDIO_IO_SPACE_NAMBA;
+#define NAMBA_PCMV AUDIO_IO_SPACE_NAMBA + 0x20 //volume? General Purpose
 #define FRONT_DAC_RATE AUDIO_IO_SPACE_NAMBA + 0x2C
 #define SURROUND_DAC_RATE AUDIO_IO_SPACE_NAMBA + 0x2E
 #define LFE_DAC_RATE AUDIO_IO_SPACE_NAMBA + 0x30
@@ -146,23 +147,30 @@ void soundcardinit(uchar bus, uchar slot, uchar func)
 	ioapicenable(IRQ_SOUND, ncpu - 1);	
 	
 	outw(SOUND_NAMBA + AUDIO_CODEC, 0x1000);
+
+    soundQueue = 0;
+}
+
+void setVolume(ushort volume)
+{
+  //NAMBA_PCMV --> volume
+  cprintf("setVolume\n");
+  outw(NAMBA_PCMV, volume);
 }
 
 //add sound-piece to the end of queue
 void addSound(struct soundNode *node)
-{
-    struct soundNode *ptr;
+{   
+    cprintf("addSound\n");
+    struct soundNode **ptr;
 
     acquire(&soundLock);
 
     node->next = 0;
-    ptr = soundQueue;
+    for(ptr = &soundQueue; *ptr; ptr = &(*ptr)->next)
+        ;
+    *ptr = node;
 
-    while (ptr)
-    {
-        ptr = ptr->next;
-    }
-    ptr = node;
 
     //node is already the first
     //play sound
@@ -176,6 +184,7 @@ void addSound(struct soundNode *node)
 
 void playSound(void)
 {
+    cprintf("playSound\n");
     int i;
 
     //遍历声卡DMA的描述符列表，初始化每一个描述符buf指向缓冲队列中第一个音乐的数据块
@@ -220,6 +229,7 @@ void playSound(void)
 
 void soundInterrupt(void)
 {
+    cprintf("soundInter");
     int i;
 
     acquire(&soundLock);
@@ -279,6 +289,7 @@ void soundInterrupt(void)
 
 void pauseSound(void)
 {
+    cprintf("pauseSound\n");
     // get Control Register
     uchar temp = inb(PO_CR);
 
@@ -290,6 +301,7 @@ void pauseSound(void)
 
 void setSoundSampleRate(uint samplerate)
 {
+    cprintf("setSoundSampleRate");
     //Control Register --> 0x00
     //pause audio
     //disable interrupt

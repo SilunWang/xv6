@@ -22,7 +22,7 @@
 #define NAMBA_PCVID2 0x7e
 //Native Audio Mixer Base Address
 ushort SOUND_NAMBA_DATA;
-#define NAMBA_PCMV SOUND_NAMBA_DATA + 0x20 //volume? General Purpose
+#define NAMBA_PCMV SOUND_NAMBA_DATA + 0x2 //volume? General Purpose
 #define FRONT_DAC_RATE SOUND_NAMBA_DATA + 0x2C
 #define SURROUND_DAC_RATE SOUND_NAMBA_DATA + 0x2E
 #define LFE_DAC_RATE SOUND_NAMBA_DATA + 0x30
@@ -151,7 +151,7 @@ void soundcardinit(uint addr)
 	
 	//Determine Audio Codec
 	tmp = inw(NAMBA_PCMV);
-	cprintf("%d\n", tmp);
+	cprintf("%x\n", tmp);
 	outw(NAMBA_PCMV, 0x8000);
 	if (inw(NAMBA_PCMV) != 0x8000)
 	{

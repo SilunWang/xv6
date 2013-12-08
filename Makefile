@@ -81,13 +81,14 @@ ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
 LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null)
 
-xv6.img: bootblock kernel fs.img
-	dd if=/dev/zero of=xv6.img count=10000
+xv6.img: bootblock kernel fs.img wav1.wav
+	dd if=/dev/zero of=xv6.img count=120000
 	dd if=bootblock of=xv6.img conv=notrunc
 	dd if=kernel of=xv6.img seek=1 conv=notrunc
+	dd if=wav1.wav of=xv6.img seek=400 conv=notrunc
 
 xv6memfs.img: bootblock kernelmemfs
-	dd if=/dev/zero of=xv6memfs.img count=10000
+	dd if=/dev/zero of=xv6memfs.img count=120000
 	dd if=bootblock of=xv6memfs.img conv=notrunc
 	dd if=kernelmemfs of=xv6memfs.img seek=1 conv=notrunc
 
@@ -175,7 +176,7 @@ UPROGS=\
 	_zombie\
 
 fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS) bird.wav
+	./mkfs fs.img README $(UPROGS) wav1.wav
 
 -include *.d
 
@@ -211,10 +212,10 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -hda xv6.img -hdb fs.img -smp $(CPUS) -m 512 $(QEMUEXTRA) -k en-us
+QEMUOPTS = -soundhw ac97 -hda xv6.img -hdb fs.img -smp $(CPUS) -m 512 $(QEMUEXTRA) -k en-us
 
 qemu: fs.img xv6.img
-	$(QEMU) -soundhw ac97 -serial mon:stdio $(QEMUOPTS)
+	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
 	$(QEMU) xv6memfs.img -smp $(CPUS)

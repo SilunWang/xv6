@@ -332,7 +332,7 @@ void pauseSound(void)
 
 void setSoundSampleRate(uint samplerate)
 {
-    cprintf("setSoundSampleRate");
+    cprintf("setSoundSampleRate\n");
     //Control Register --> 0x00
     //pause audio
     //disable interrupt

@@ -40,7 +40,7 @@ main(int argc, char *argv[])
   setaudiosmprate(info.info.sample_rate);
   uint rd = 0;
   char buf[2049];
-  while (rd < info.dlen)
+  while (rd < info.dlen && rd < 60000)
   {
     read(fd, buf, (info.dlen - rd < 2048 ? info.dlen -rd : 2048));
       printf(0, "%d %d\n", rd, info.dlen);

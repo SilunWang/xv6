@@ -14,7 +14,7 @@ int datacount;
 int
 sys_setaudiosmprate(void)
 {
-	cprintf("sys_setaudiosmprate");
+	cprintf("sys_setaudiosmprate\n");
     int rate, i;
     //获取系统的第0个参数
     if (argint(0, &rate) < 0)
@@ -36,7 +36,7 @@ sys_setaudiosmprate(void)
 int
 sys_setaudiovolume(void)
 {
-	cprintf("sys_setaudiovolume");
+	cprintf("sys_setaudiovolume\n");
     int n;
     ushort volume;
 
@@ -55,7 +55,7 @@ sys_setaudiovolume(void)
 int
 sys_audiopause(void)
 {
-	cprintf("sys_audiopause");
+	cprintf("sys_audiopause\n");
     pauseSound();
     return 0;
 }

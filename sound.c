@@ -7,9 +7,19 @@
 #include "spinlock.h"
 #include "proc.h"
 
+#define PCI_CONFIG_SPACE_STA_CMD 0x4
+#define PCI_CONFIG_SPACE_NAMBA 0X10
+#define PCI_CONFIG_SPACE_NABMBA 0x14
+#define PCI_CONFIG_SPACE_SID_SVID 0x2c
+#define PCI_CONFIG_SPACE_INTRL 0x3c
+
 #define PCI_CONFIG_COMMAND 0xcf8
 #define PCI_CONFIG_DATA 0xcfc
 
+#define NABMBA_GLOB_CNT 0x2c
+#define NABMBA_GLOB_STA 0x30
+#define NAMBA_PCVID1 0x7c
+#define NAMBA_PCVID2 0x7e
 //Native Audio Mixer Base Address
 ushort SOUND_NAMBA_DATA;
 #define NAMBA_PCMV SOUND_NAMBA_DATA + 0x20 //volume? General Purpose
@@ -56,6 +66,30 @@ void write_pci_config(uchar bus, uchar slot, uchar func, uchar offset, uint val)
     outsl(0xcfc, &val, 1);
 }
 
+void pciwrite(ushort addr, uchar reg, uint data)
+{
+	uint tmp;
+	tmp = addr;
+	tmp <<= 8;
+	tmp |= 0x80000000;
+	tmp |= (reg & 0xfc);
+	outsl(PCI_CONFIG_COMMAND, &tmp, 1);
+	outsl(PCI_CONFIG_DATA, &data, 1);
+}
+
+uint pciread(ushort addr, uchar reg)
+{
+	uint tmp;
+	tmp = addr;
+	tmp <<= 8;
+	tmp |= 0x80000000;
+	tmp |= (reg & 0xfc);
+	outsl(PCI_CONFIG_COMMAND, &tmp, 1);
+	uint result;
+	insl(PCI_CONFIG_DATA, &result, 1);
+	return result;
+}
+
 void soundinit(void)
 {
 	uchar bus, slot, func;
@@ -76,7 +110,7 @@ void soundinit(void)
             {
                 cprintf("Find sound card!\n");
                 // Init sound
-                soundcardinit(bus, slot, func);
+                soundcardinit((bus << 8) + (slot << 3) + func);
                 return;
             }
         }
@@ -84,67 +118,64 @@ void soundinit(void)
 	cprintf("Sound card not found!\n");
 }
 
-void soundcardinit(uchar bus, uchar slot, uchar func)
+void soundcardinit(uint addr)
 {
 	uint tmp, reflection, cur, vendorID;
 	ushort vendorID1, vendorID2;
 	
 	//Initializing the Audio I/O Space
-	tmp = read_pci_config(bus, slot, func, SOUND_COM & 0xfc);
-	write_pci_config(bus, slot, func, SOUND_COM & 0xfc, tmp | 0x05);
-	SOUND_NAMBA_DATA = read_pci_config(bus, slot, func, SOUND_NAMBA & 0xfc) & (~0x1);
-	SOUND_NABMBA_DATA = read_pci_config(bus, slot, func, SOUND_NABMBA & 0xfc) & (~0x1);
+	tmp = pciread(addr, PCI_CONFIG_SPACE_STA_CMD);
+	pciwrite(addr, PCI_CONFIG_SPACE_STA_CMD, tmp | 0x5);
+
+	SOUND_NAMBA_DATA = pciread(addr, PCI_CONFIG_SPACE_NAMBA) & (~0x1);
+	SOUND_NABMBA_DATA = pciread(addr, PCI_CONFIG_SPACE_NABMBA) & (~0x1);
 	cprintf("AUDIO I/O Space initialized successfully!\n");
 	
 	//Removing AC_RESET
-	outb(SOUND_NABMBA_DATA + AC_RESET, 0x2);
+	outb(SOUND_NABMBA_DATA + NABMBA_GLOB_CNT, 0x2);
 	cprintf("AC_RESET removed successfully!\n");
 	
 	//Reading Codec Ready Status
 	cur = 0;
 	cprintf("Waiting for Codec Ready Status...\n");
-	while (1)
+	while (!(inw(SOUND_NABMBA_DATA + NABMBA_GLOB_STA) & 0X100) && cur < 1000)
 	{
-		++cur;
-		//wait and read
-		reflection = inw(SOUND_NABMBA_DATA + READY_STATE);
-		if ((reflection & 0x100) != 0)
-        break;
-		//timeout
-		if (cur > 1000000)
-		{
-			cprintf("Failed for reading codec ready status!\n");
-			return;
-		}
+		cur++;
+	}
+	if (cur == 1000)
+	{
+		cprintf("\nAudio Init Failed\n");
+		return;
 	}
 	cprintf("Codec is ready!\n");
 	
 	//Determine Audio Codec
-	tmp = inw(SOUND_NAMBA_DATA + AUDIO_CODEC);
-	outw(SOUND_NAMBA_DATA + AUDIO_CODEC, 0x8000);
-	if (inw(SOUND_NAMBA_DATA + AUDIO_CODEC) != 0x8000)
+	tmp = inw(NAMBA_PCMV);
+	cprintf("%d\n", tmp);
+	outw(NAMBA_PCMV, 0x8000);
+	if (inw(NAMBA_PCMV) != 0x8000)
 	{
 		cprintf("Audio Codec Function not found!\n");
 		return;
 	}
-	tmp = inw(SOUND_NAMBA_DATA + AUDIO_CODEC);
+	outw(NAMBA_PCMV, tmp);
 	cprintf("Audio Codec Function is found, current volume is %x.\n", tmp);
 	
 	//Reading the Audio Codec Vendor ID
-	vendorID1 = inw(SOUND_NAMBA_DATA + PRIMARY_VENDOR_ID1);
-	vendorID2 = inw(SOUND_NAMBA_DATA + PRIMARY_VENDOR_ID2);
+	vendorID1 = inw(SOUND_NAMBA_DATA + NAMBA_PCVID1);
+	vendorID2 = inw(SOUND_NAMBA_DATA + NAMBA_PCVID2);
 	cprintf("Audio Codec Vendor ID read successfully!\n");
 	
 	//Programming the PCI Audio Subsystem ID
 	vendorID = (vendorID2 << 16) + vendorID1;
-	write_pci_config(bus, slot, func, SYBSYSTEM_VENDOR_ID, vendorID);
+	pciwrite(addr, PCI_CONFIG_SPACE_SID_SVID, vendorID);
 	
 	//Initailize Interruption
 	initlock(&soundLock, "audio");
 	picenable(IRQ_SOUND);
 	ioapicenable(IRQ_SOUND, ncpu - 1);	
 	
-	outw(SOUND_NAMBA + AUDIO_CODEC, 0x1000);
+	outw(NAMBA_PCMV, 0x1f1f);
 
     soundQueue = 0;
 }

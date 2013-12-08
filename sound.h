@@ -50,7 +50,7 @@ struct wav{
 
 uint read_pci_config(uchar bus, uchar slot, uchar func, uchar offset);
 void write_pci_config(uchar bus, uchar slot, uchar func, uchar offset, uint val);
-void soundcardinit(uchar bus, uchar slot, uchar func);
+void soundcardinit(uint addrs);
 void setVolume(ushort volume);
 void addSound(struct soundNode *node);
 void playSound(void);

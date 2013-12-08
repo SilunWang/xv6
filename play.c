@@ -27,7 +27,7 @@ main(int argc, char *argv[])
     exit();
   }
 
-/*  if ((info.info.id != 0x20746d66)||
+  if ((info.info.id != 0x20746d66)||
       (info.info.channel != 0x0002)||
       (info.info.bytes_per_sample != 0x0004)||
       (info.info.bits_per_sample != 0x0010)) {
@@ -36,7 +36,7 @@ main(int argc, char *argv[])
     close(fd);
     exit();
   }
-*/
+
   setaudiosmprate(info.info.sample_rate);
   uint rd = 0;
   char buf[2049];

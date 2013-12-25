@@ -25,3 +25,4 @@
 #define SYS_ideread 24
 #define SYS_setVolume 25
 #define SYS_pause 26
+#define SYS_mp3decode 27

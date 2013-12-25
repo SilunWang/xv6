@@ -137,7 +137,6 @@ sys_writeaudio(void)
 int
 sys_setVolume(void)
 {
-    cprintf("sys_setaudiovolume");
     int n;
     ushort volume;
 
@@ -154,7 +153,6 @@ sys_setVolume(void)
 int
 sys_pause(void)
 {
-    cprintf("sound is paused");
     sndlock.tag = 0;
     if (ispaused == 0)
 	ispaused = 1;

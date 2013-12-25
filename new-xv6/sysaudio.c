@@ -5,7 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "buf.h"
-#include "audio.h"
+#include "sound.h"
 #include "spinlock.h"
 
 static struct soundNode audiobuf[3];

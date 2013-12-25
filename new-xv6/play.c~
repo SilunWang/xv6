@@ -66,6 +66,7 @@ main(int argc, char *argv[])
   kill(pid);
   kill(mp3pid);
   wait();
+  wait();
   exit();
 }
 

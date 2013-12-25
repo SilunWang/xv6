@@ -99,7 +99,6 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_writeaudio(void);
 extern int sys_uptime(void);
-extern int sys_ideread(void);
 extern int sys_setSampleRate(void);
 extern int sys_setVolume(void);
 extern int sys_pause(void);
@@ -128,7 +127,6 @@ static int (*syscalls[])(void) = {
 [SYS_write]   sys_write,
 [SYS_writeaudio] sys_writeaudio,
 [SYS_uptime]  sys_uptime,
-[SYS_ideread]     sys_ideread,
 [SYS_setSampleRate] sys_setSampleRate,
 [SYS_setVolume] sys_setVolume,
 [SYS_pause] sys_pause,

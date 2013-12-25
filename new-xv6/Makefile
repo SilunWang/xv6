@@ -1,5 +1,5 @@
 OBJS = \
-  audio.o\
+	sound.o\
 	bio.o\
 	console.o\
 	exec.o\
@@ -149,12 +149,11 @@ UPROGS=\
 	_sh\
 	_stressfs\
 	_usertests\
-	_wavmake\
 	_wc\
 	_zombie\
 
 fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS) wav1.wav back.wav
+	./mkfs fs.img README $(UPROGS) wav1.wav
 
 -include *.d
 
@@ -189,7 +188,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -hdb fs.img xv6.img -smp $(CPUS)
+QEMUOPTS = -soundhw ac97 -hdb fs.img -hda xv6.img -smp $(CPUS)
 
 qemu: fs.img xv6.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)

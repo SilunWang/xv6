@@ -1,7 +1,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "audio.h"
+#include "sound.h"
 #include "fcntl.h"
 
 int

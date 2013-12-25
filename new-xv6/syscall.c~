@@ -132,7 +132,7 @@ static int (*syscalls[])(void) = {
 [SYS_setSampleRate] sys_setSampleRate,
 [SYS_setVolume] sys_setVolume,
 [SYS_pause] sys_pause,
-[SYS_mp3decode] sys_mp3deocde,
+[SYS_mp3decode] sys_mp3decode,
 };
 
 void

@@ -5,7 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "buf.h"
-#include "sound.h"
+#include "audio.h"
 
 int
 sys_fork(void)
